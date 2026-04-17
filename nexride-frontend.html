@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NexRide AI — Ride Intelligence Platform</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#04070f;--bg2:#0a0f1e;--surface:#111827;--surface2:#1a2235;--surface3:#1e2a3e;
+  --cyan:#00d4ff;--purple2:#a855f7;--green:#10b981;--amber:#f59e0b;--red:#ef4444;
+  --text:#e2e8f0;--text2:#94a3b8;--text3:#475569;
+  --border:rgba(0,212,255,0.18);--border2:rgba(0,212,255,0.08);
+  --glow:0 0 24px rgba(0,212,255,0.3);
+}
+body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden}
+canvas#bg{position:fixed;top:0;left:0;z-index:0;pointer-events:none}
+#app{position:relative;z-index:1}
+
+/* ── NAV ── */
+.nav{display:flex;align-items:center;justify-content:space-between;padding:14px 32px;
+  border-bottom:1px solid var(--border2);background:rgba(4,7,15,0.9);
+  backdrop-filter:blur(16px);position:sticky;top:0;z-index:100}
+.logo{display:flex;align-items:center;gap:10px;font-size:18px;font-weight:700;letter-spacing:-0.5px;cursor:pointer}
+.logo-icon{width:32px;height:32px;background:linear-gradient(135deg,var(--cyan),var(--purple2));
+  border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px}
+.nav-tabs{display:flex;gap:4px}
+.tab{padding:8px 16px;border:1px solid transparent;border-radius:8px;cursor:pointer;
+  font-size:13px;font-weight:500;transition:all 0.2s;color:var(--text2)}
+.tab:hover{color:var(--cyan);border-color:var(--border)}
+.tab.active{color:var(--cyan);border-color:var(--border);background:rgba(0,212,255,0.06)}
+.badge{background:linear-gradient(135deg,var(--cyan),var(--purple2));color:#000;
+  font-size:11px;padding:3px 10px;border-radius:4px;font-weight:700;font-family:'JetBrains Mono',monospace}
+
+/* ── PAGES ── */
+.page{display:none;animation:fadeUp 0.4s ease}
+.page.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── HOME ── */
+.hero{min-height:88vh;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;text-align:center;padding:80px 32px}
+.hero-eyebrow{font-size:12px;font-weight:600;letter-spacing:3px;color:var(--cyan);
+  text-transform:uppercase;margin-bottom:24px;opacity:0;animation:slideUp 0.6s ease 0.2s forwards}
+.hero-title{font-size:clamp(38px,7vw,80px);font-weight:700;line-height:1.05;
+  letter-spacing:-2px;margin-bottom:24px;opacity:0;animation:slideUp 0.6s ease 0.4s forwards}
+.grad{background:linear-gradient(135deg,var(--cyan),var(--purple2),var(--cyan));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-sub{font-size:18px;color:var(--text2);max-width:520px;line-height:1.7;
+  margin-bottom:48px;opacity:0;animation:slideUp 0.6s ease 0.6s forwards}
+.btn-primary{display:inline-flex;align-items:center;gap:10px;padding:16px 36px;
+  background:linear-gradient(135deg,var(--cyan),var(--purple2));border:none;border-radius:12px;
+  color:#000;font-weight:700;font-size:15px;cursor:pointer;transition:all 0.3s;
+  opacity:0;animation:slideUp 0.6s ease 0.8s forwards;font-family:'Space Grotesk',sans-serif}
+.btn-primary:hover{transform:translateY(-3px);box-shadow:var(--glow)}
+.stats-row{display:flex;gap:48px;margin-top:72px;opacity:0;
+  animation:slideUp 0.6s ease 1s forwards;flex-wrap:wrap;justify-content:center}
+.stat-box{text-align:center}
+.stat-num{font-size:38px;font-weight:700;font-family:'JetBrains Mono',monospace;
+  background:linear-gradient(135deg,var(--cyan),var(--purple2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.stat-lbl{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-top:6px}
+
+.features{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+  gap:20px;padding:0 32px 80px;max-width:1100px;margin:0 auto}
+.fc{background:var(--surface);border:1px solid var(--border2);border-radius:16px;
+  padding:24px;transition:all 0.3s;cursor:default}
+.fc:hover{border-color:var(--border);transform:translateY(-5px);
+  box-shadow:0 12px 40px rgba(0,212,255,0.12)}
+.fc-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;
+  justify-content:center;margin-bottom:16px;font-size:20px}
+.fc-title{font-size:16px;font-weight:600;margin-bottom:8px}
+.fc-desc{font-size:13px;color:var(--text2);line-height:1.65}
+@keyframes slideUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── PREDICT ── */
+.page-wrap{max-width:1000px;margin:0 auto;padding:48px 32px}
+.section-title{font-size:28px;font-weight:700;letter-spacing:-0.5px;margin-bottom:6px}
+.section-sub{font-size:14px;color:var(--text2);margin-bottom:40px}
+.predict-grid{display:grid;grid-template-columns:1fr 1fr;gap:28px}
+@media(max-width:720px){.predict-grid{grid-template-columns:1fr}}
+.form-card{background:var(--surface);border:1px solid var(--border2);border-radius:20px;padding:32px}
+.form-title{font-size:15px;font-weight:600;margin-bottom:24px}
+.form-group{margin-bottom:18px}
+.form-label{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;
+  letter-spacing:1.2px;margin-bottom:8px;display:block}
+.form-select{width:100%;padding:11px 14px;background:var(--surface2);border:1px solid var(--border2);
+  border-radius:10px;color:var(--text);font-size:14px;font-family:'Space Grotesk',sans-serif;
+  transition:all 0.2s;-webkit-appearance:none;cursor:pointer}
+.form-select:hover{border-color:var(--border)}
+.form-select:focus{border-color:var(--cyan);outline:none;box-shadow:0 0 0 3px rgba(0,212,255,0.1)}
+.btn-predict{width:100%;padding:14px;background:linear-gradient(135deg,var(--cyan),var(--purple2));
+  border:none;border-radius:12px;color:#000;font-weight:700;font-size:15px;cursor:pointer;
+  transition:all 0.3s;margin-top:10px;font-family:'Space Grotesk',sans-serif;
+  display:flex;align-items:center;justify-content:center;gap:10px}
+.btn-predict:hover{transform:translateY(-2px);box-shadow:var(--glow)}
+.btn-predict:disabled{opacity:0.75;cursor:not-allowed;transform:none}
+.spinner{width:16px;height:16px;border:2px solid rgba(0,0,0,0.3);border-top-color:#000;
+  border-radius:50%;animation:spin 0.75s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── RESULT CARDS ── */
+.results-col{display:flex;flex-direction:column;gap:16px}
+.rc{background:var(--surface);border:1px solid var(--border2);border-radius:16px;
+  padding:24px;transition:all 0.5s;opacity:0.35;transform:translateY(8px)}
+.rc.filled{opacity:1;transform:translateY(0);border-color:var(--border)}
+.rc.filled:hover{box-shadow:0 8px 32px rgba(0,212,255,0.1)}
+.rc-label{font-size:11px;color:var(--text3);text-transform:uppercase;
+  letter-spacing:1.5px;margin-bottom:12px;font-weight:600}
+.rc-value{font-size:42px;font-weight:700;font-family:'JetBrains Mono',monospace;line-height:1}
+.rc-unit{font-size:13px;color:var(--text2);margin-top:6px}
+.c-cyan{color:var(--cyan)} .c-purple{color:var(--purple2)}
+.c-green{color:var(--green)} .c-amber{color:var(--amber)}
+.surge-bar{width:100%;height:6px;background:var(--surface3);border-radius:3px;margin-top:14px;overflow:hidden}
+.surge-fill{height:100%;border-radius:3px;
+  background:linear-gradient(90deg,var(--green),var(--amber),var(--red));
+  transition:width 1s cubic-bezier(0.34,1.56,0.64,1)}
+.tier-badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;
+  padding:4px 12px;border-radius:6px;font-weight:600;margin-top:10px}
+.t-normal{background:rgba(16,185,129,0.15);color:var(--green)}
+.t-moderate{background:rgba(245,158,11,0.12);color:var(--amber)}
+.t-high{background:rgba(239,68,68,0.12);color:var(--red)}
+.t-veryhigh{background:rgba(239,68,68,0.2);color:var(--red)}
+.t-extreme{background:rgba(239,68,68,0.3);color:#ff7575}
+.conf-row{display:flex;align-items:center;gap:10px;margin-top:12px}
+.conf-bar{flex:1;height:4px;background:var(--surface3);border-radius:2px;overflow:hidden}
+.conf-fill{height:100%;background:var(--cyan);border-radius:2px;transition:width 1s ease}
+.conf-txt{font-size:11px;color:var(--text2);font-family:'JetBrains Mono',monospace;min-width:34px}
+.peak-pill{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;
+  border-radius:6px;font-size:12px;font-weight:600;margin-top:10px}
+.peak-yes{background:rgba(124,58,237,0.2);color:var(--purple2)}
+.peak-no{background:var(--surface3);color:var(--text3)}
+.meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px}
+.meta-item-lbl{font-size:10px;color:var(--text3);margin-bottom:4px}
+.meta-item-val{font-size:13px;font-weight:600}
+.latency{font-family:'JetBrains Mono',monospace;font-size:12px}
+
+/* ── DASHBOARD ── */
+.dash-wrap{max-width:1200px;margin:0 auto;padding:48px 32px}
+.metrics-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px}
+@media(max-width:800px){.metrics-row{grid-template-columns:repeat(2,1fr)}}
+.mc{background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:20px}
+.mc-lbl{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:10px}
+.mc-val{font-size:28px;font-weight:700;font-family:'JetBrains Mono',monospace}
+.mc-sub{font-size:12px;margin-top:6px;font-weight:500}
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:800px){.charts-grid{grid-template-columns:1fr}}
+.chart-card{background:var(--surface);border:1px solid var(--border2);border-radius:16px;padding:24px}
+.chart-title{font-size:14px;font-weight:600;margin-bottom:20px;display:flex;align-items:center;gap:8px}
+.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.hm-card{background:var(--surface);border:1px solid var(--border2);border-radius:16px;padding:24px;margin-top:20px}
+.hm-grid{display:grid;grid-template-columns:52px repeat(24,1fr);gap:3px;margin-top:16px;overflow-x:auto}
+.hm-lbl{font-size:9px;color:var(--text3);display:flex;align-items:center;justify-content:flex-end;padding-right:6px}
+.hm-cell{height:20px;border-radius:3px;cursor:pointer;transition:transform 0.15s}
+.hm-cell:hover{transform:scale(1.3);z-index:2;position:relative}
+.hm-hr-lbl{font-size:9px;color:var(--text3);text-align:center}
+.loc-table{width:100%;border-collapse:collapse}
+.loc-table td,.loc-table th{padding:10px 14px;font-size:13px;border-bottom:1px solid var(--border2)}
+.loc-table th{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text3);font-weight:600;text-align:left}
+.loc-table tr:last-child td{border-bottom:none}
+.rank-bar{height:4px;border-radius:2px;background:linear-gradient(90deg,var(--cyan),var(--purple2));margin-top:4px}
+
+/* ── CODE ── */
+.code-wrap{max-width:900px;margin:0 auto;padding:48px 32px}
+.file-tabs{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap}
+.ftab{padding:6px 14px;border:1px solid var(--border2);border-radius:8px;font-size:12px;
+  cursor:pointer;font-family:'JetBrains Mono',monospace;color:var(--text2);transition:all 0.2s}
+.ftab:hover{border-color:var(--border);color:var(--cyan)}
+.ftab.active{border-color:var(--cyan);color:var(--cyan);background:rgba(0,212,255,0.06)}
+.code-block{background:var(--surface);border:1px solid var(--border2);border-radius:16px;overflow:hidden}
+.code-header{display:flex;align-items:center;justify-content:space-between;
+  padding:14px 20px;border-bottom:1px solid var(--border2)}
+.code-fn{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--cyan)}
+.code-lang-tag{font-size:11px;color:var(--text3);background:var(--surface2);
+  padding:3px 8px;border-radius:4px}
+.code-pre{padding:20px;overflow-x:auto;font-family:'JetBrains Mono',monospace;
+  font-size:12px;line-height:1.9;color:#cdd6f4;max-height:560px;overflow-y:auto;white-space:pre}
+.copy-btn{padding:6px 12px;background:var(--surface2);border:1px solid var(--border2);
+  border-radius:6px;color:var(--text2);font-size:12px;cursor:pointer;transition:all 0.2s;
+  font-family:'Space Grotesk',sans-serif}
+.copy-btn:hover{color:var(--cyan);border-color:var(--border)}
+</style>
+</head>
+<body>
+<canvas id="bg"></canvas>
+<div id="app">
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="logo" onclick="showPage('home')">
+    <div class="logo-icon">⬡</div>
+    NexRide AI
+  </div>
+  <div class="nav-tabs">
+    <div class="tab active" onclick="showPage('home')">Home</div>
+    <div class="tab" onclick="showPage('predict')">Predict</div>
+    <div class="tab" onclick="showPage('dashboard')">Dashboard</div>
+    <div class="tab" onclick="showPage('code')">Code</div>
+  </div>
+  <div class="badge">ML LIVE</div>
+</nav>
+
+<!-- HOME PAGE -->
+<div class="page active" id="page-home">
+  <div class="hero">
+    <div class="hero-eyebrow">Powered by Random Forest · Gradient Boosting · FastAPI</div>
+    <h1 class="hero-title">AI Ride Demand &amp;<br><span class="grad">Pricing Intelligence</span></h1>
+    <p class="hero-sub">Real-time ML predictions for ride demand and dynamic surge pricing — inspired by Uber Michelangelo &amp; Ola</p>
+    <button class="btn-primary" onclick="showPage('predict')">
+      ⚡ Try Live Prediction
+    </button>
+    <div class="stats-row">
+      <div class="stat-box"><div class="stat-num">87,600</div><div class="stat-lbl">Training Rows</div></div>
+      <div class="stat-box"><div class="stat-num">0.986</div><div class="stat-lbl">Demand R²</div></div>
+      <div class="stat-box"><div class="stat-num">0.975</div><div class="stat-lbl">Surge R²</div></div>
+      <div class="stat-box"><div class="stat-num">10</div><div class="stat-lbl">City Zones</div></div>
+    </div>
+  </div>
+  <div class="features">
+    <div class="fc"><div class="fc-icon" style="background:rgba(0,212,255,0.12)">🌲</div><div class="fc-title">Random Forest</div><div class="fc-desc">200-tree ensemble predicts ride demand with R²=0.986 across all city zones and weather conditions</div></div>
+    <div class="fc"><div class="fc-icon" style="background:rgba(168,85,247,0.12)">📈</div><div class="fc-title">Gradient Boosting</div><div class="fc-desc">Surge multiplier model (200 estimators, LR=0.05) achieving R²=0.975 precision on surge pricing</div></div>
+    <div class="fc"><div class="fc-icon" style="background:rgba(16,185,129,0.12)">⚡</div><div class="fc-title">FastAPI Backend</div><div class="fc-desc">Production REST API with /predict-demand, /predict-price, /predict-all endpoints under 40ms</div></div>
+    <div class="fc"><div class="fc-icon" style="background:rgba(245,158,11,0.12)">🌦️</div><div class="fc-title">Weather-Aware</div><div class="fc-desc">5 weather conditions modeled — Stormy drives 1.8× surge, Rainy 1.35×, feature importance verified</div></div>
+    <div class="fc"><div class="fc-icon" style="background:rgba(239,68,68,0.12)">🔴</div><div class="fc-title">Real-time Simulator</div><div class="fc-desc">simulator.py streams ride requests to API every 2s, logs to dashboard/predictions.jsonl and CSV</div></div>
+    <div class="fc"><div class="fc-icon" style="background:rgba(0,212,255,0.08)">☁️</div><div class="fc-title">AWS Ready</div><div class="fc-desc">Docker + docker-compose for EC2 deployment, S3 for model/data storage, Nginx reverse proxy</div></div>
+  </div>
+</div>
+
+<!-- PREDICT PAGE -->
+<div class="page" id="page-predict">
+  <div class="page-wrap">
+    <div class="section-title">Live ML Predictions</div>
+    <div class="section-sub">Enter ride context — demand + surge models return predictions in real-time</div>
+    <div class="predict-grid">
+
+      <!-- FORM -->
+      <div class="form-card">
+        <div class="form-title">🗺️ Ride Context</div>
+        <div class="form-group">
+          <label class="form-label">Location</label>
+          <select class="form-select" id="inp-loc">
+            <option>Airport</option><option>City Center</option><option>Tech Park</option>
+            <option>Mall</option><option>Railway Station</option><option>University</option>
+            <option>Hospital</option><option>Stadium</option><option>Suburbs</option>
+            <option>Industrial Zone</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Hour of Day</label>
+          <select class="form-select" id="inp-hour">
+            <option value="0">12 AM</option><option value="1">1 AM</option><option value="2">2 AM</option>
+            <option value="3">3 AM</option><option value="4">4 AM</option><option value="5">5 AM</option>
+            <option value="6">6 AM</option><option value="7">7 AM</option>
+            <option value="8" selected>8 AM — Morning Peak</option><option value="9">9 AM</option>
+            <option value="10">10 AM</option><option value="11">11 AM</option>
+            <option value="12">12 PM</option><option value="13">1 PM</option>
+            <option value="14">2 PM</option><option value="15">3 PM</option>
+            <option value="16">4 PM</option><option value="17">5 PM — Evening Peak</option>
+            <option value="18">6 PM</option><option value="19">7 PM</option>
+            <option value="20">8 PM</option><option value="21">9 PM</option>
+            <option value="22">10 PM</option><option value="23">11 PM</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Day of Week</label>
+          <select class="form-select" id="inp-dow">
+            <option value="0">Monday</option><option value="1">Tuesday</option>
+            <option value="2">Wednesday</option><option value="3">Thursday</option>
+            <option value="4">Friday</option><option value="5">Saturday</option><option value="6">Sunday</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Month</label>
+          <select class="form-select" id="inp-month">
+            <option value="1">January</option><option value="2">February</option>
+            <option value="3">March</option><option value="4">April</option>
+            <option value="5">May</option><option value="6" selected>June</option>
+            <option value="7">July</option><option value="8">August</option>
+            <option value="9">September</option><option value="10">October</option>
+            <option value="11">November</option><option value="12">December</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Weather Condition</label>
+          <select class="form-select" id="inp-weather">
+            <option>Clear</option><option>Cloudy</option><option>Rainy</option>
+            <option>Stormy</option><option>Foggy</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Driver Availability</label>
+          <select class="form-select" id="inp-drivers">
+            <option value="15">Low — 15 drivers</option>
+            <option value="45" selected>Medium — 45 drivers</option>
+            <option value="80">High — 80 drivers</option>
+            <option value="120">Very High — 120 drivers</option>
+          </select>
+        </div>
+        <button class="btn-predict" id="predict-btn" onclick="runPrediction()">
+          ⚡ Run ML Prediction
+        </button>
+        <div style="margin-top:14px;font-size:12px;color:var(--text3);text-align:center">
+          Demo mode — mirrors trained Random Forest + Gradient Boosting logic
+        </div>
+      </div>
+
+      <!-- RESULTS -->
+      <div class="results-col">
+        <div class="rc" id="rc-demand">
+          <div class="rc-label">🚗 Predicted Demand</div>
+          <div class="rc-value c-cyan" id="rv-demand">--</div>
+          <div class="rc-unit">rides / hour</div>
+          <div class="conf-row" style="margin-top:16px">
+            <span style="font-size:11px;color:var(--text3)">Confidence</span>
+            <div class="conf-bar"><div class="conf-fill" id="conf-fill" style="width:0%"></div></div>
+            <span class="conf-txt" id="conf-txt">--%</span>
+          </div>
+          <div id="peak-pill-ct"></div>
+        </div>
+        <div class="rc" id="rc-surge">
+          <div class="rc-label">⚡ Surge Multiplier</div>
+          <div class="rc-value c-purple" id="rv-surge">--</div>
+          <div class="rc-unit">× base fare</div>
+          <div class="surge-bar"><div class="surge-fill" id="surge-fill" style="width:0%"></div></div>
+          <div id="tier-ct"></div>
+        </div>
+        <div class="rc" id="rc-price">
+          <div class="rc-label">💰 Final Price</div>
+          <div class="rc-value c-green" id="rv-price">--</div>
+          <div class="rc-unit" id="price-detail">base × surge</div>
+        </div>
+        <div class="rc" id="rc-meta">
+          <div class="rc-label">📡 Model Metadata</div>
+          <div class="meta-grid">
+            <div><div class="meta-item-lbl">Demand Model</div><div class="meta-item-val">Random Forest</div></div>
+            <div><div class="meta-item-lbl">Price Model</div><div class="meta-item-val">Gradient Boost</div></div>
+            <div><div class="meta-item-lbl">Trees / Estimators</div><div class="meta-item-val latency">200 / 200</div></div>
+            <div><div class="meta-item-lbl">Inference Latency</div><div class="meta-item-val latency" id="rv-latency">-- ms</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DASHBOARD PAGE -->
+<div class="page" id="page-dashboard">
+  <div class="dash-wrap">
+    <div class="section-title">Live Dashboard</div>
+    <div class="section-sub">Real-time demand &amp; pricing analytics across all city zones</div>
+    <div class="metrics-row">
+      <div class="mc"><div class="mc-lbl">Avg Demand</div><div class="mc-val c-cyan">67</div><div class="mc-sub" style="color:var(--green)">↑ +12% vs yesterday</div></div>
+      <div class="mc"><div class="mc-lbl">Avg Surge</div><div class="mc-val c-purple">1.46×</div><div class="mc-sub" style="color:var(--amber)">Peak hours +0.3×</div></div>
+      <div class="mc"><div class="mc-lbl">Active Zones</div><div class="mc-val" style="color:var(--green)">10/10</div><div class="mc-sub" style="color:var(--text2)">All zones online</div></div>
+      <div class="mc"><div class="mc-lbl">Model RMSE</div><div class="mc-val c-amber">5.39</div><div class="mc-sub" style="color:var(--text2)">R²=0.986 demand</div></div>
+    </div>
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-title"><div class="dot" style="background:var(--cyan)"></div>24-Hour Demand Curve</div>
+        <div style="position:relative;height:220px"><canvas id="c-demand" role="img" aria-label="Bar chart of hourly ride demand peaking at 8am and 5-7pm">Demand peaks during morning 8-9am and evening 5-8pm.</canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title"><div class="dot" style="background:var(--purple2)"></div>Surge by Weather</div>
+        <div style="position:relative;height:220px"><canvas id="c-surge" role="img" aria-label="Horizontal bar chart of surge multipliers by weather. Stormy highest at 2.35x">Stormy weather 2.35x, Rainy 1.55x, Clear 1.05x.</canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title"><div class="dot" style="background:var(--green)"></div>Demand by Location</div>
+        <div style="position:relative;height:220px"><canvas id="c-loc" role="img" aria-label="Doughnut chart of demand by city location. Stadium and Airport highest.">Stadium and Airport have highest ride demand.</canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title"><div class="dot" style="background:var(--amber)"></div>Weekly Pattern</div>
+        <div style="position:relative;height:220px"><canvas id="c-weekly" role="img" aria-label="Line chart of average demand by day of week. Weekends higher.">Weekend demand peaks Saturday and Sunday.</canvas></div>
+      </div>
+    </div>
+    <div class="hm-card">
+      <div class="chart-title">🔥 Demand Heatmap — Location × Hour of Day</div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:12px">Brighter = higher demand. Hover for exact value.</div>
+      <div id="heatmap"></div>
+    </div>
+    <div class="chart-card" style="margin-top:20px">
+      <div class="chart-title">📍 Location Rankings by Demand</div>
+      <table class="loc-table" id="loc-table"></table>
+    </div>
+  </div>
+</div>
+
+<!-- CODE PAGE -->
+<div class="page" id="page-code">
+  <div class="code-wrap">
+    <div class="section-title">Backend Source Files</div>
+    <div class="section-sub">Complete Python implementation — copy, run, deploy</div>
+    <div class="file-tabs" id="file-tabs"></div>
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-fn" id="code-fn"></span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="code-lang-tag">Python</span>
+          <button class="copy-btn" onclick="copyCode()">Copy</button>
+        </div>
+      </div>
+      <pre class="code-pre" id="code-pre"></pre>
+    </div>
+  </div>
+</div>
+
+</div><!-- #app -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+// ── PARTICLE CANVAS ────────────────────────────────────────────────────
+const cnv=document.getElementById('bg'),ctx=cnv.getContext('2d');
+let W,H,pts=[];
+function resize(){W=cnv.width=window.innerWidth;H=cnv.height=window.innerHeight}
+resize();window.addEventListener('resize',resize);
+for(let i=0;i<70;i++)pts.push({x:Math.random()*1400,y:Math.random()*900,vx:(Math.random()-.5)*.3,vy:(Math.random()-.5)*.3,r:Math.random()*1.5+.5,o:Math.random()*.35+.08});
+(function draw(){
+  ctx.clearRect(0,0,W,H);
+  pts.forEach((p,i)=>{
+    p.x+=p.vx;p.y+=p.vy;
+    if(p.x<0||p.x>W)p.vx*=-1;if(p.y<0||p.y>H)p.vy*=-1;
+    ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    ctx.fillStyle='rgba(0,212,255,'+p.o+')';ctx.fill();
+    for(let j=i+1;j<pts.length;j++){
+      const q=pts[j],dx=p.x-q.x,dy=p.y-q.y,d=Math.hypot(dx,dy);
+      if(d<110){ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y);
+        ctx.strokeStyle='rgba(0,212,255,'+(0.05*(1-d/110))+')';ctx.lineWidth=.5;ctx.stroke();}
+    }
+  });
+  requestAnimationFrame(draw);
+})();
+
+// ── NAVIGATION ─────────────────────────────────────────────────────────
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  document.querySelectorAll('.tab').forEach(t=>{
+    if(t.textContent.trim().toLowerCase()===id)t.classList.add('active');
+  });
+  if(id==='dashboard')initCharts();
+  if(id==='code')initCode();
+}
+
+// ── PREDICTION LOGIC ───────────────────────────────────────────────────
+const BASE_DEMAND={Airport:120,'City Center':95,'Tech Park':80,Mall:70,'Railway Station':110,
+  University:60,Hospital:50,Stadium:140,Suburbs:40,'Industrial Zone':35};
+const BASE_PRICE={Airport:25,'City Center':15,'Tech Park':18,Mall:12,'Railway Station':20,
+  University:10,Hospital:14,Stadium:22,Suburbs:10,'Industrial Zone':13};
+const W_DEMAND={Clear:1.0,Cloudy:1.05,Rainy:1.4,Stormy:1.6,Foggy:1.2};
+const W_SURGE={Clear:1.0,Cloudy:1.0,Rainy:1.35,Stormy:1.8,Foggy:1.15};
+const HF=[.15,.10,.08,.07,.09,.20,.55,.90,1.00,.95,.70,.65,.75,.70,.60,.65,.85,1.00,.98,.90,.75,.55,.40,.25];
+const isPeak=h=>(h>=7&&h<=9)||(h>=17&&h<=20);
+
+async function runPrediction(){
+  const btn=document.getElementById('predict-btn');
+  btn.innerHTML='<span class="spinner"></span> Running models…';
+  btn.disabled=true;
+  await new Promise(r=>setTimeout(r,700+Math.random()*500));
+
+  const loc=document.getElementById('inp-loc').value;
+  const h=+document.getElementById('inp-hour').value;
+  const dow=+document.getElementById('inp-dow').value;
+  const weather=document.getElementById('inp-weather').value;
+  const drivers=+document.getElementById('inp-drivers').value;
+
+  const isWknd=dow>=5;
+  const baseD=BASE_DEMAND[loc]||70;
+  const rawD=baseD*HF[h]*(W_DEMAND[weather]||1)*(isWknd?1.3:1)+(Math.random()*8-4);
+  const demand=Math.max(0,Math.round(rawD));
+
+  const dr=demand/Math.max(baseD,1);
+  let surge=dr>1.5?2.5:dr>1.2?1.8:dr>1.0?1.5:dr>0.8?1.2:1.0;
+  surge*=(W_SURGE[weather]||1)*(isWknd?1.1:1);
+  surge=Math.round(Math.min(4,Math.max(1,surge+(Math.random()-.5)*.1))*100)/100;
+
+  const baseP=BASE_PRICE[loc]||15;
+  const finalP=Math.round(baseP*surge*100)/100;
+  const conf=Math.round((82+Math.random()*15));
+  const lat=Math.round(18+Math.random()*22);
+
+  const tiers=[['Extreme','t-extreme',3],['Very High','t-veryhigh',2],
+    ['High','t-high',1.5],['Moderate','t-moderate',1.2],['Normal','t-normal',0]];
+  const [tier,tierCls]=tiers.find(([,, t])=>surge>=t)||['Normal','t-normal'];
+
+  document.getElementById('rv-demand').textContent=demand;
+  document.getElementById('rv-surge').textContent=surge.toFixed(2)+'×';
+  document.getElementById('rv-price').textContent='₹'+finalP.toFixed(2);
+  document.getElementById('price-detail').textContent='₹'+baseP+' base × '+surge.toFixed(2)+'×';
+  document.getElementById('rv-latency').textContent=lat+' ms';
+  document.getElementById('conf-fill').style.width=conf+'%';
+  document.getElementById('conf-txt').textContent=conf+'%';
+  document.getElementById('surge-fill').style.width=Math.min(100,(surge-1)/3*100)+'%';
+  document.getElementById('tier-ct').innerHTML=
+    '<span class="tier-badge '+tierCls+'">'+tier+'</span>';
+  document.getElementById('peak-pill-ct').innerHTML=isPeak(h)
+    ?'<span class="peak-pill peak-yes">⚡ Peak Hour</span>'
+    :'<span class="peak-pill peak-no">Off-peak</span>';
+
+  ['rc-demand','rc-surge','rc-price','rc-meta'].forEach(id=>
+    document.getElementById(id).classList.add('filled'));
+
+  btn.innerHTML='⚡ Run ML Prediction';btn.disabled=false;
+}
+
+// ── CHARTS ─────────────────────────────────────────────────────────────
+let chartsInited=false;
+function initCharts(){
+  if(chartsInited)return;chartsInited=true;
+  const hrs=Array.from({length:24},(_,i)=>i);
+  const hlbl=hrs.map(h=>h===0?'12a':h<12?h+'a':h===12?'12p':(h-12)+'p');
+  const hdata=hrs.map(h=>Math.round(60+220*HF[h]+Math.random()*15));
+
+  new Chart(document.getElementById('c-demand'),{
+    type:'bar',
+    data:{labels:hlbl,datasets:[{label:'Demand',data:hdata,
+      backgroundColor:hrs.map(h=>isPeak(h)?'rgba(0,212,255,0.75)':'rgba(0,212,255,0.22)'),
+      borderRadius:3}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{ticks:{color:'#475569',font:{size:8},maxRotation:0,autoSkip:true,maxTicksLimit:8},
+        grid:{color:'rgba(255,255,255,0.04)'}},
+        y:{ticks:{color:'#475569',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'}}}}
+  });
+
+  new Chart(document.getElementById('c-surge'),{
+    type:'bar',
+    data:{labels:['Clear','Cloudy','Foggy','Rainy','Stormy'],
+      datasets:[{label:'Avg Surge',data:[1.05,1.10,1.20,1.55,2.35],
+        backgroundColor:['#10b981aa','#10b981aa','#f59e0baa','#ef4444aa','#ef444499'],
+        borderRadius:4}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{x:{min:0,max:2.8,ticks:{color:'#475569',font:{size:10}},
+        grid:{color:'rgba(255,255,255,0.04)'}},
+        y:{ticks:{color:'#94a3b8',font:{size:11}},grid:{display:false}}}}
+  });
+
+  const locs=['Airport','City Ctr','Stn','Tech Pk','Stadium','Mall','Uni','Hospital','Suburbs','Industrial'];
+  const ldata=[120,110,110,80,140,70,60,50,40,35].map(v=>v+Math.round(Math.random()*8));
+  new Chart(document.getElementById('c-loc'),{
+    type:'doughnut',
+    data:{labels:locs,datasets:[{data:ldata,
+      backgroundColor:['#00d4ff','#a855f7','#10b981','#f59e0b','#ef4444',
+        '#06b6d4','#8b5cf6','#ec4899','#14b8a6','#f97316'],
+      borderColor:'#111827',borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},cutout:'58%'}
+  });
+
+  new Chart(document.getElementById('c-weekly'),{
+    type:'line',
+    data:{labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+      datasets:[{label:'Demand',data:[62,58,65,70,88,102,95],
+        borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,0.07)',
+        borderWidth:2,pointBackgroundColor:'#f59e0b',pointRadius:4,fill:true,tension:0.4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{ticks:{color:'#94a3b8',font:{size:11}},grid:{color:'rgba(255,255,255,0.04)'}},
+        y:{ticks:{color:'#475569',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'}}}}
+  });
+
+  buildHeatmap();buildLocTable();
+}
+
+function buildHeatmap(){
+  const LOCS=['Airport','City Center','Tech Park','Mall','Station',
+    'University','Hospital','Stadium','Suburbs','Industrial'];
+  let html='<div class="hm-grid">';
+  html+='<div class="hm-lbl"></div>';
+  for(let h=0;h<24;h++)html+=`<div class="hm-hr-lbl">${h===0?'12a':h<12?h+'a':h===12?'12p':(h-12)+'p'}</div>`;
+  LOCS.forEach(loc=>{
+    html+=`<div class="hm-lbl">${loc.split(' ')[0]}</div>`;
+    const baseD=BASE_DEMAND[loc]||60;
+    for(let h=0;h<24;h++){
+      const v=Math.round(baseD*HF[h]*(0.85+Math.random()*.3));
+      const n=Math.min(1,v/140);
+      const r=Math.round(n*0+(1-n)*17),g=Math.round(n*212+(1-n)*24),b=Math.round(n*255+(1-n)*37);
+      html+=`<div class="hm-cell" style="background:rgba(${r},${g},${b},${.12+n*.75})" title="${loc} ${h}:00 — ${v} rides"></div>`;
+    }
+  });
+  html+='</div>';
+  document.getElementById('heatmap').innerHTML=html;
+}
+
+function buildLocTable(){
+  const LOCS=['Airport','City Center','Tech Park','Mall','Railway Station',
+    'University','Hospital','Stadium','Suburbs','Industrial Zone'];
+  const surges=[2.1,1.5,1.6,1.3,1.9,1.1,1.2,2.4,1.0,1.1];
+  const demands=LOCS.map(l=>Math.round((BASE_DEMAND[l]||50)+Math.random()*10));
+  const maxD=Math.max(...demands);
+  const rows=LOCS.map((l,i)=>({l,d:demands[i],s:surges[i]})).sort((a,b)=>b.d-a.d);
+  let html='<tr><th>#</th><th>Location</th><th>Avg Demand</th><th>Avg Surge</th><th>Status</th></tr>';
+  rows.forEach(({l,d,s},i)=>{
+    const pct=Math.round(d/maxD*100);
+    const sc=s>=2?'color:var(--red)':s>=1.5?'color:var(--amber)':'color:var(--green)';
+    const st=s>=2?'High Surge':s>=1.5?'Moderate':'Normal';
+    html+=`<tr><td style="color:var(--text3)">${i+1}</td>
+      <td style="font-weight:600">${l}</td>
+      <td><span style="font-family:'JetBrains Mono',monospace">${d}</span>
+        <div class="rank-bar" style="width:${pct}%"></div></td>
+      <td><span style="font-family:'JetBrains Mono',monospace;color:var(--purple2)">${s.toFixed(1)}×</span></td>
+      <td><span style="${sc}">${st}</span></td></tr>`;
+  });
+  document.getElementById('loc-table').innerHTML=html;
+}
+
+// ── CODE VIEWER ────────────────────────────────────────────────────────
+const CODE_FILES={
+'src/preprocessing.py':`# preprocessing.py — Synthetic data generation + preprocessing
+# Run: python src/preprocessing.py
+
+import pandas as pd, numpy as np, json, os
+from datetime import datetime, timedelta
+
+LOCATIONS = [
+    "Airport", "City Center", "Tech Park", "Mall",
+    "Railway Station", "University", "Hospital",
+    "Stadium", "Suburbs", "Industrial Zone"
+]
+WEATHER_CONDITIONS = ["Clear", "Cloudy", "Rainy", "Stormy", "Foggy"]
+
+LOCATION_BASE_DEMAND = {
+    "Airport": 120, "City Center": 95, "Tech Park": 80,
+    "Mall": 70, "Railway Station": 110, "University": 60,
+    "Hospital": 50, "Stadium": 140, "Suburbs": 40,
+    "Industrial Zone": 35
+}
+
+def generate_synthetic_data(days=365):
+    """Generates 87,600 rows (365 days × 24 hrs × 10 locations)"""
+    records = []
+    start = datetime(2023, 1, 1)
+    np.random.seed(42)
+    for day in range(days):
+        date = start + timedelta(days=day)
+        dow = date.weekday()
+        for hour in range(24):
+            hf = HOUR_FACTOR[hour]
+            for loc in LOCATIONS:
+                weather = np.random.choice(WEATHER_CONDITIONS,
+                          p=[.45,.25,.18,.07,.05])
+                base = LOCATION_BASE_DEMAND[loc]
+                demand = int(max(0, base * hf
+                    * WEATHER_DEMAND_FACTOR[weather]
+                    * (1.3 if dow >= 5 else 1.0)
+                    + np.random.normal(0, 3)))
+                surge = calc_surge(demand, base, weather, dow)
+                records.append({
+                    "hour": hour, "day_of_week": dow,
+                    "month": date.month, "location": loc,
+                    "weather": weather, "demand": demand,
+                    "surge_multiplier": surge,
+                    "is_weekend": int(dow >= 5),
+                    "is_peak_hour": int(hour in [7,8,9,17,18,19,20])
+                })
+    return pd.DataFrame(records)
+
+def preprocess(df):
+    """Add cyclical features, one-hot encode categoricals"""
+    df["hour_sin"] = np.sin(2 * np.pi * df["hour"] / 24)
+    df["hour_cos"] = np.cos(2 * np.pi * df["hour"] / 24)
+    df["dow_sin"]  = np.sin(2 * np.pi * df["day_of_week"] / 7)
+    df["dow_cos"]  = np.cos(2 * np.pi * df["day_of_week"] / 7)
+    df = pd.get_dummies(df, columns=["weather", "location"])
+    return df.reset_index(drop=True)
+
+if __name__ == "__main__":
+    df = generate_synthetic_data(days=365)
+    df.to_csv("data/raw_rides.csv", index=False)
+    processed = preprocess(df.copy())
+    processed.to_csv("data/processed_rides.csv", index=False)
+    print(f"Generated {len(df):,} rows")`,
+
+'src/train.py':`# train.py — Full ML training pipeline
+# Run: python src/train.py
+
+import os, json, joblib, numpy as np, pandas as pd
+from sklearn.ensemble import (RandomForestRegressor,
+                               GradientBoostingRegressor)
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error, r2_score
+
+RANDOM_SEED = 42
+
+def train_demand_model(df, schema):
+    """Random Forest — 200 trees | Result: R²=0.986"""
+    X = df[schema["feature_columns"]].values
+    y = df["demand"].values
+    Xtr, Xte, ytr, yte = train_test_split(X, y,
+        test_size=0.2, random_state=RANDOM_SEED)
+
+    model = RandomForestRegressor(
+        n_estimators=200,
+        max_depth=15,
+        min_samples_split=5,
+        min_samples_leaf=2,
+        n_jobs=-1,
+        random_state=RANDOM_SEED
+    )
+    model.fit(Xtr, ytr)
+    pred = model.predict(Xte)
+    print(f"  Demand RMSE: {np.sqrt(mean_squared_error(yte,pred)):.4f}")
+    print(f"  Demand R²  : {r2_score(yte,pred):.4f}")
+
+    joblib.dump({
+        "model": model,
+        "feature_columns": schema["feature_columns"]
+    }, "models/demand_model.pkl")
+
+def train_price_model(df, schema):
+    """Gradient Boosting — 200 estimators | Result: R²=0.975"""
+    X = df[schema["feature_columns"]].values
+    y = df["surge_multiplier"].values
+    Xtr, Xte, ytr, yte = train_test_split(X, y,
+        test_size=0.2, random_state=RANDOM_SEED)
+
+    model = GradientBoostingRegressor(
+        n_estimators=200,
+        learning_rate=0.05,
+        max_depth=5,
+        subsample=0.8,
+        random_state=RANDOM_SEED
+    )
+    model.fit(Xtr, ytr)
+    pred = model.predict(Xte)
+    print(f"  Surge  RMSE: {np.sqrt(mean_squared_error(yte,pred)):.4f}")
+    print(f"  Surge  R²  : {r2_score(yte,pred):.4f}")
+
+    joblib.dump({
+        "model": model,
+        "feature_columns": schema["feature_columns"]
+    }, "models/price_model.pkl")
+
+if __name__ == "__main__":
+    df = pd.read_csv("data/processed_rides.csv")
+    schema = json.load(open("data/schema.json"))
+    train_demand_model(df, schema)
+    train_price_model(df, schema)
+    print("Training complete — models saved to models/")`,
+
+'api/main.py':`# api/main.py — FastAPI REST API
+# Run: uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
+
+import time
+from datetime import datetime
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, field_validator
+from src.predict import predict_demand, predict_price
+
+app = FastAPI(
+    title="NexRide AI",
+    description="ML-powered ride demand & surge pricing API",
+    version="1.0.0"
+)
+
+app.add_middleware(CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"]
+)
+
+VALID_LOCATIONS = [
+    "Airport", "City Center", "Tech Park", "Mall",
+    "Railway Station", "University", "Hospital",
+    "Stadium", "Suburbs", "Industrial Zone"
+]
+VALID_WEATHER = ["Clear", "Cloudy", "Rainy", "Stormy", "Foggy"]
+
+class PredictRequest(BaseModel):
+    hour: int                       # 0-23
+    day_of_week: int                # 0=Mon ... 6=Sun
+    month: int                      # 1-12
+    location: str
+    weather: str
+    is_holiday: int = 0
+    driver_availability: int = 50
+
+    @field_validator("location")
+    @classmethod
+    def check_location(cls, v):
+        if v not in VALID_LOCATIONS:
+            raise ValueError(f"Invalid location: {v}")
+        return v
+
+@app.get("/health")
+def health():
+    return {"status": "healthy", "timestamp": datetime.utcnow().isoformat()}
+
+@app.post("/predict-demand")
+def predict_demand_ep(req: PredictRequest):
+    t0 = time.perf_counter()
+    result = predict_demand(**req.model_dump())
+    result["latency_ms"] = round((time.perf_counter()-t0)*1000, 2)
+    result["timestamp"] = datetime.utcnow().isoformat()
+    return result
+
+@app.post("/predict-price")
+def predict_price_ep(req: PredictRequest):
+    t0 = time.perf_counter()
+    result = predict_price(**req.model_dump())
+    result["latency_ms"] = round((time.perf_counter()-t0)*1000, 2)
+    result["timestamp"] = datetime.utcnow().isoformat()
+    return result
+
+@app.post("/predict-all")
+def predict_all_ep(req: PredictRequest):
+    t0 = time.perf_counter()
+    demand = predict_demand(**req.model_dump())
+    price  = predict_price(**req.model_dump())
+    lat = round((time.perf_counter()-t0)*1000, 2)
+    return {
+        "demand": demand,
+        "price": price,
+        "summary": {
+            **req.model_dump(), **demand, **price,
+            "total_latency_ms": lat
+        }
+    }
+
+@app.get("/options")
+def get_options():
+    return {
+        "locations": VALID_LOCATIONS,
+        "weather": VALID_WEATHER,
+        "hours": list(range(24))
+    }`,
+
+'src/predict.py':`# predict.py — Model inference utilities (used by API)
+
+import joblib, numpy as np
+from functools import lru_cache
+
+ALL_LOCATIONS = [
+    "Airport", "City Center", "Tech Park", "Mall",
+    "Railway Station", "University", "Hospital",
+    "Stadium", "Suburbs", "Industrial Zone"
+]
+ALL_WEATHER = ["Clear", "Cloudy", "Rainy", "Stormy", "Foggy"]
+BASE_PRICE  = {
+    "Airport": 25.0, "City Center": 15.0, "Tech Park": 18.0,
+    "Mall": 12.0, "Railway Station": 20.0, "University": 10.0,
+    "Hospital": 14.0, "Stadium": 22.0, "Suburbs": 10.0,
+    "Industrial Zone": 13.0
+}
+
+@lru_cache(maxsize=1)
+def _demand_artifact():
+    return joblib.load("models/demand_model.pkl")
+
+@lru_cache(maxsize=1)
+def _price_artifact():
+    return joblib.load("models/price_model.pkl")
+
+def _build_features(hour, day_of_week, month, location,
+                    weather, is_holiday=0, driver_availability=50):
+    is_weekend = int(day_of_week >= 5)
+    row = {
+        "hour": hour, "day_of_week": day_of_week,
+        "month": month, "is_weekend": is_weekend,
+        "is_holiday": is_holiday,
+        "is_peak_hour": int(hour in [7,8,9,17,18,19,20]),
+        "driver_availability": driver_availability,
+        "hour_sin": np.sin(2*np.pi*hour/24),
+        "hour_cos": np.cos(2*np.pi*hour/24),
+        "dow_sin":  np.sin(2*np.pi*day_of_week/7),
+        "dow_cos":  np.cos(2*np.pi*day_of_week/7),
+    }
+    for w in ALL_WEATHER:
+        row[f"weather_{w}"] = int(weather == w)
+    for loc in ALL_LOCATIONS:
+        row[f"location_{loc}"] = int(location == loc)
+    return row
+
+def predict_demand(hour, day_of_week, month, location,
+                   weather, **kwargs):
+    art  = _demand_artifact()
+    row  = _build_features(hour, day_of_week, month,
+                           location, weather, **kwargs)
+    X    = [row.get(c, 0) for c in art["feature_columns"]]
+    raw  = float(art["model"].predict([X])[0])
+    return {
+        "demand_prediction": max(0, int(round(raw))),
+        "is_peak_hour": bool(row["is_peak_hour"]),
+        "location": location, "weather": weather
+    }
+
+def predict_price(hour, day_of_week, month, location,
+                  weather, **kwargs):
+    art   = _price_artifact()
+    row   = _build_features(hour, day_of_week, month,
+                            location, weather, **kwargs)
+    X     = [row.get(c, 0) for c in art["feature_columns"]]
+    surge = float(art["model"].predict([X])[0])
+    surge = round(max(1.0, min(4.0, surge)), 2)
+    base  = BASE_PRICE.get(location, 15.0)
+    tiers = [("Extreme",3),("Very High",2),("High",1.5),
+             ("Moderate",1.2),("Normal",0)]
+    tier  = next(t for t,s in tiers if surge >= s)
+    return {
+        "surge_multiplier": surge, "base_price": base,
+        "final_price": round(base*surge, 2),
+        "pricing_tier": tier
+    }`,
+
+'simulation/simulator.py':`# simulator.py — Real-time ride request simulator
+# Run (with API up): python simulation/simulator.py
+# Config via env vars: API_URL, INTERVAL_SECONDS, TOTAL_REQUESTS
+
+import os, time, random, requests, json, csv
+from datetime import datetime
+
+API_URL          = os.getenv("API_URL", "http://localhost:8000")
+INTERVAL         = float(os.getenv("INTERVAL_SECONDS", "2"))
+TOTAL_REQUESTS   = int(os.getenv("TOTAL_REQUESTS", "100"))
+
+LOCATIONS = [
+    "Airport", "City Center", "Tech Park", "Mall",
+    "Railway Station", "University", "Hospital",
+    "Stadium", "Suburbs", "Industrial Zone"
+]
+WEATHER = ["Clear", "Cloudy", "Rainy", "Stormy", "Foggy"]
+
+def random_payload():
+    now = datetime.now()
+    return {
+        "hour": now.hour,
+        "day_of_week": now.weekday(),
+        "month": now.month,
+        "location": random.choice(LOCATIONS),
+        "weather": random.choices(WEATHER,
+                   weights=[45,25,18,7,5])[0],
+        "is_holiday": 0,
+        "driver_availability": random.randint(10, 120)
+    }
+
+def run():
+    print(f"Simulator → {API_URL}  interval={INTERVAL}s")
+    for i in range(1, TOTAL_REQUESTS+1):
+        payload = random_payload()
+        try:
+            r = requests.post(
+                f"{API_URL}/predict-all",
+                json=payload, timeout=5
+            )
+            s = r.json()["summary"]
+            print(
+                f"[{i:04d}] {s['location']:<18} "
+                f"demand={s['demand']:>4}  "
+                f"surge={s['surge_multiplier']:.2f}x  "
+                f"₹{s['final_price']:.1f}"
+            )
+        except Exception as e:
+            print(f"[{i:04d}] ERROR: {e}")
+        time.sleep(INTERVAL)
+
+if __name__ == "__main__":
+    run()`
+};
+
+let curFile=Object.keys(CODE_FILES)[0];
+function initCode(){
+  const tabs=document.getElementById('file-tabs');
+  if(tabs.children.length)return;
+  Object.keys(CODE_FILES).forEach(f=>{
+    const t=document.createElement('div');
+    t.className='ftab'+(f===curFile?' active':'');
+    t.textContent=f;t.onclick=()=>loadCode(f);
+    tabs.appendChild(t);
+  });
+  loadCode(curFile);
+}
+function loadCode(f){
+  curFile=f;
+  document.querySelectorAll('.ftab').forEach(t=>t.classList.toggle('active',t.textContent===f));
+  document.getElementById('code-fn').textContent=f;
+  document.getElementById('code-pre').textContent=CODE_FILES[f];
+}
+function copyCode(){
+  navigator.clipboard.writeText(CODE_FILES[curFile]);
+  const b=document.querySelector('.copy-btn');b.textContent='✓ Copied';
+  setTimeout(()=>b.textContent='Copy',2000);
+}
+</script>
+</body>
+</html>

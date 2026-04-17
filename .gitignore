@@ -1,0 +1,59 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+pip-wheel-metadata/
+*.egg
+.installed.cfg
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# Data (large files — store in S3)
+backend/data/*.csv
+backend/data/*.parquet
+
+# Models (store in S3 or model registry)
+# Comment out if you want to track small models in git
+# backend/models/*.pkl
+
+# Simulator output
+backend/dashboard/predictions.jsonl
+backend/dashboard/dashboard_data.csv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Docker
+.dockerignore
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Env files
+.env
+.env.local
+.env.production
+
+# Logs
+*.log
+logs/
+
+# Node (if frontend gets a build step)
+node_modules/
+dist/
+.next/
